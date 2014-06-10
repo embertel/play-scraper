@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 require 'yaml'
+require 'json'
 require 'optparse'
 require 'date'
 require 'nokogiri'
@@ -31,7 +32,7 @@ class Scraping
     app = App.new(apk_name)
     app.titile = page.css('div.info-container div.document-title').text.strip
     title_arr = page.css('div.info-container .document-subtitle')
-    
+
     app.creator = title_arr[0].text.strip
     app.creator_url = BASE_URL + title_arr[0]['href']
     date_string = page.css("div[itemprop='datePublished']").text.strip
@@ -40,6 +41,9 @@ class Scraping
     app.category_url = BASE_URL + title_arr[2]['href']
     app.ratings_count = page.css('div.reviews-stats span.reviews-num').text.strip
     app.rating =page.css('div.rating-box div.score-container div.score').text.strip
+    price_string = page.css('div.details-actions span.buy-button-container button.price').text.strip
+    app.price = (price_string == 'Install' ? 'Free' : price_string.split(' ')[0])
+    app.inapp_purchases = page.css('div.inapp-msg').text.strip
     app.description = page.css('div.show-more-content div.id-app-orig-desc').text.strip
     extended_info = page.css('div.details-section-contents div.meta-info div.content')
     app.update_date =  extended_info[0].text.strip
@@ -50,7 +54,7 @@ class Scraping
     app.operating_systems  =  extended_info[4].text.strip
     app.content_rating = extended_info[5].text.strip
     contact_details = page.css('div.details-section div.details-section-contents div.meta-info div.content a.dev-link')
-    contact_details.each do |type| 
+    contact_details.each do |type|
        if (type.text.downcase.include? "website")
          app.developer_website = type['href']
        elsif(type.text.downcase.include? "email")
@@ -64,10 +68,10 @@ class Scraping
     new_changes_list.each do |change|
       changes << change.text.strip
     end
-    app.what_is_new = changes unless changes.empty? 
+    app.what_is_new = changes unless changes.empty?
     serialized_app = YAML::dump(app)
     puts serialized_app
-    
+
   end
 
   def start_main(apk_name)
